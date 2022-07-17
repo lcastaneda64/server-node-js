@@ -1,16 +1,38 @@
 const express = require("express");
+const observador = require("../middlewares/observador");
 const router = express.Router();
+const UsuarioModel = require('../models/Usuario.model');
+const jwt = require('jsonwebtoken');
+const verificaToken = require("../middlewares/verificaToken");
 
-router.get("/usuario", (request, response) => {
+router.get("/",[verificaToken], (req, resp) => {
 
-    response.status(200).json({
-        "message": "Estás dentro de la API GET General de Usuario"
+    UsuarioModel.find()
+    .then((usuarios) => {
+
+        return resp.status(200).json({
+            msg: "Se consultaron los usuarios exitosamente",
+            status: 200,
+            cont: {
+                usuarios
+            }
+        });
+
+    })
+    .catch((err) => {
+        return resp.status(500).json({
+            msg: "Error al consultar los usuarios.",
+            status: 500,
+            cont: {
+                error: err
+            }
+        });
     });
 
 });
 
 //API CON PARÁMETROS OBLIGATORIOS
-router.get("/usuario/:id/:nombre/:apellido/:edad", (request, response) => {
+router.get("/:id/:nombre/:apellido/:edad", (request, response) => {
 
     //DECLARACIÓN INDIVIDUAL
     // const id = request.params.id;
@@ -52,15 +74,33 @@ router.get("/usuarioBusqueda", (req, resp) => {
     });
 });
 
-router.post("/usuario", (request, response) => {
+router.post("/", (req, resp) => {
 
-    response.status(200).json({
-        "message": "Estás dentro de la API POST de usuario"
+    const usuario = new UsuarioModel(req.body);
+
+    usuario.save()
+    .then((usuarioRegistrado) => {
+        return resp.status(200).json({
+            msg: "Usuario registrado exitosamente",
+            status: 200,
+            cont: {
+                usuario: usuarioRegistrado
+            }
+        });
+    })
+    .catch((err) => {
+        return resp.status(500).json({
+            msg: "Error al registrar el usuario",
+            status: 500,
+            cont: {
+                error: err
+            }
+        });
     });
 
 });
 
-router.put("/usuario", (req, res) => {
+router.put("/", (req, res) => {
 
     res.status(200).json({
         "message": "Estás dentro de la API PUT de usuario"
@@ -68,11 +108,52 @@ router.put("/usuario", (req, res) => {
 
 });
 
-router.delete("/usuario", (req, res) => {
+router.delete("/", (req, res) => {
 
     res.status(200).json({
         "message": "Estás dentro de la API DELETE de usuario"
     });
+});
+
+router.post("/login", (req, resp) => {
+
+    const {strCorreo, strPassword} = req.body;
+
+    UsuarioModel.findOne({correoElectronico: strCorreo, password: strPassword})
+    .then((usuario) => {    
+
+        if(usuario === null) {
+            return resp.status(400).json({
+                msg: "El correo y/o contraseña son incorrectos",
+                status: 400,
+                cont: {
+                    usuario: null
+                }
+            });
+
+        } else {
+            const token = jwt.sign({usuario}, process.env.AUTH_SEED, {expiresIn: "24h"});
+            return resp.status(200).json({
+                msg: "Usuario ingresó exitosamente",
+                status: 200,
+                cont: {
+                    token
+                }
+            });
+        }
+
+    })
+    .catch((err) => {
+
+        return resp.status(500).json({
+            msg: "Error al ingresar.",
+            status: 500,
+            cont: {
+                error: err.message
+            }
+        });
+    });
+
 });
 
 module.exports = router;
