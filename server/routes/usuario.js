@@ -1,9 +1,9 @@
 const express = require("express");
-const observador = require("../middlewares/observador");
 const router = express.Router();
 const UsuarioModel = require('../models/Usuario.model');
 const jwt = require('jsonwebtoken');
 const verificaToken = require("../middlewares/verificaToken");
+const Email = require('../libraries/Email');
 
 router.get("/",[verificaToken], (req, resp) => {
 
@@ -154,6 +154,32 @@ router.post("/login", (req, resp) => {
         });
     });
 
+});
+
+router.post("/enviarEmail", (request, resp) => {
+
+    const strCorreo = request.body.strCorreo;
+
+    const data = request.body;
+    Email.sendEmail(strCorreo, data)
+    .then((response) => {
+        return resp.status(200).json({
+            msg: "Se ha enviado el correo exitosamente",
+            status: 200,
+            cont: {
+                response
+            }
+        });
+    })
+    .catch((error) => {
+        return resp.status(500).json({
+            msg: "Hubo un error al enviar el correo",
+            status: 500,
+            cont: {
+                error
+            }
+        });
+    })
 });
 
 module.exports = router;

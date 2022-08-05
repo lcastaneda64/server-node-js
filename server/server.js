@@ -21,3 +21,5 @@ mongoose.connect(process.env.URLDB, {})
 app.listen(process.env.PORT, () => {
     console.log("[NODEJS]".green + " LISTEN TO PORT: " + process.env.PORT.blue);
 });
+const fs = require('fs');
+const path = require('path');
